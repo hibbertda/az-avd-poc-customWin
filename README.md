@@ -37,7 +37,6 @@ Four use cases have been
 |Developer| Developer workstation with approved developer tools |
 |Administrator|Windows 10 with administrative tools and access. |
 |General| General purpose Windows 10 desktop. Includes standard Office apps and LOB applications. Configuration should match existing end-user desktop. |
-|General INL-A| General purpose Windows 10 desktop. With  INL-Airwing specific controls and configurations. |
 
 ### Developer
 
@@ -53,5 +52,3 @@ The developer use case assumes:
 ### Administrator
 
 ### General
-
-### General INL-A
