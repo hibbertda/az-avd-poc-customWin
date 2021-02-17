@@ -1,0 +1,19 @@
+# Terraform state
+.terraform
+*.tfstate*
+
+# Packer
+#*.pkrvars.hcl
+
+wvd-sessionhosts
+arm-templates
+
+#Temp
+#win10-vm-images
+
+# local / testing secret
+secret*
+
+#secret.win10-developer.pkrvars.hcl
+
+pipeline
