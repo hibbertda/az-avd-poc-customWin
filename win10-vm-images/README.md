@@ -28,7 +28,7 @@ The Packer templates are created to [automatically upload disk images to the Sha
 ```
 
 |variable|Description|
-|---|---|---|
+|---|---|
 |subscription| Subcription ID where the Shared Image Gallery is created |
 |resource_group| Resource Group where the Shared Image Gallery is created |
 |gallery_name| Shared Image Gallery Name|
