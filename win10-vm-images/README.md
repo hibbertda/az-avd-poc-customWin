@@ -27,11 +27,11 @@ The Packer templates are created to [automatically upload disk images to the Sha
   }
 ```
 
-||Description|
+|variable|Description|
 |---|---|---|
 |subscription| Subcription ID where the Shared Image Gallery is created |
 |resource_group| Resource Group where the Shared Image Gallery is created |
 |gallery_name| Shared Image Gallery Name|
 |image_name| image name in the Shared Image Gallery. The image definition is not created automatically by the template. It must exists prior to running the Packer build, or the build process will fail.|
 |image_version| version number is automatically generated based on the current data and time the template build is performed.|
-|replication_regions| Azure regions to replicate the 
+|replication_regions| Azure regions to replicate the |
