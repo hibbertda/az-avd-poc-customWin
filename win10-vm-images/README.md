@@ -1,6 +1,6 @@
 # Windows 10 Custom Image - Developer
 
-Custom Windows 10 disk image for use with INL Windows Virtual Desktop proof of concept. This image is designed for use by Developers. Includes a set of general tools.
+Custom Windows 10 disk image for use with Windows Virtual Desktop proof of concept. This image is designed for use by Developers. Includes a set of general tools.
 
 
 ## Shared Image Gallery
