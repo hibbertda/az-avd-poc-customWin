@@ -3,7 +3,7 @@ variable "env" {
     default = {
         "build_rg"          = "rg-win10image"
         "build_region"      = "CentralUS"
-        "az_subscription"   = "ce934b07-c047-4954-bfbc-b528d97c2c70"
+        "az_subscription"   = ""
         "cloud_type"        = "Public"
 
 
