@@ -17,3 +17,5 @@ secret*
 #secret.win10-developer.pkrvars.hcl
 
 pipeline
+
+developer_old
