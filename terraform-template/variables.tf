@@ -61,8 +61,7 @@ variable "remote_vnet_peer" {
 	type = set(string)	
 	description = "remote VNETs to setup peering"
 	default = [
-		"/subscriptions/844ec848-530f-48cb-8e07-2f5e83b2e346/resourceGroups/rg-coeart-identity-network/providers/Microsoft.Network/virtualNetworks/vnet-coeart-identity"
-	]
+		""
 }
 
 # variable "remote_dns_servers" {
