@@ -28,5 +28,9 @@ choco install python --confirm
 
 choco install vscode-python --confirm
 
+# SQL Server Management Studio (SSMS)
 choco install sql-server-management-studio --confirm
 
+# Azure Data Studio
+choco install azure-data-studio --confirm
+choco install azuredatastudio-powershell

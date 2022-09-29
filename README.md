@@ -1,69 +1,175 @@
-# Windows Virtual Desktop - Testing Environment (POC)
+# Azure Virtual Desktop (AVD) - Template Deployment (POC)
 
-Proof of concept for deploying Windows Virtual Desktop (WVD). The POC will include 
+Templates to automatically build out a full AVD environment with session hosts built with a customer Windows 10/11 image.
 
-- Creation of Azure DevOps pipeline to automate the creation of custom Windows 10 disk images
-- Template deployment for WVD workspace and hostpools
-- Assign developer identities to developer host VMs.
-
-*[note 11/9/2020]*
+- Packer template to create custom Windows 10/11 base os image.
+- Template deployment for AVD workspace, hostpools, and session hosts.
 
 ## Environment Configuration
 
-### Azure DevOps Service Connection
 
-An Azure Service Principal (sp) was created to create an Azure DevOps service connection for deployment.
+### Requirements
 
-|Name||
-|---|---|
-|sp-WVDPilot-AzureDevOps-core-P-01||
-
-The service principal was created from the Azure CLI command-line.
-
-```bash
-az ad sp create-for-rbac --name sp-WVDPilot-AzureDevOps-core-P-01
-```
-[Azure Docs: AzCLI Create Service Principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal)
+- Active Azure Subscription
+- Permissions to deploy Resource Groups and Azure resources
+- **Active Directory Domain Services (AD DS)**: needed to join session host VMs and authenticate users. Can be traditional AD DS or Azure Active Directory Domain Services (AAD DS). The subnet for session host VMs requires network access to join the domain.
 
 ## Templates
 
-A series of templates are included to automate the deployment and configuration of WVD assets. Including automated process to built and maintain a managed Windows 10 (multi-user) OS image. 
+## Prereqs
 
-## WVD Usecases
+The Prereqs template will deploy resources that AVD will depend on.
 
-There are four use cases identified for targeting specific user requirements and needs for Windows Virtural Desktop (WVD).
-
-|Usecase | Description
+||Description|
 |---|---|
-|General purpose| General purpose Windows 10 desktop. Includes standard Office apps and LOB applications. Configuration should match existing end-user desktop. |
-|Developer| Developer workstation with approved developer tools |
-|Administrator|Windows 10 with administrative tools and access. |
+|avd-domain-user|AAD account for adding sessions host VMs to the ADD DS domain|
+|Resource Group - Core | Core / Common AVD resources. Will be used across all AVD hostpools in the tenant|
+|Resource Group - Images | Custom image resources|
+|Key Vault| Storage for deployment and service secrets. All passwords generated during the deployment will be placed in the key vault|
+|Network|Required network resouces include VNet and Subnets|
+|Profile Storage|Azure Storage account for storing persistent user profiles (FSLogix)|
+|Compute Gallery|Azure Compute Gallery for storage / managment of custom images used for AVD|
 
-<hr>
+### variables
 
-### General Purpose
+```yaml
+variable "tags" {
+  description = "List of resource tags"
+  type = object
+  default = {
+    "owner"       = "Daniel Hibbert"
+    "projectName" = "AVD"
+  }
+}
+variable "location" {
+  description = "Default Azure Region"
+  type = string
+}
 
-Standard user workstation to enable remote access to organization application and resources. Experience will mirror physical Windows 10 workstations with approved organizational settings. 
+variable "virtualNetwork" {
+  description = "Virtual network configuration"
+  default = {
+    address_space = ["10.12.0.0/16"]
+  }
+}
 
-The General Purpose use case assumes:
-- Standard user workstation
-- Inlcudes organization line of business and productivity applications.
-- Pooled Windows 10 multi-user workstations.
-- Profile persistance enabled (FSLogix).
+variable "subnets" {
+  description = "Subnets"
+  type = list(object(
+    {
+      name = optional(string, vm)
+      address_prefix = list
+    }
+  ))
+}
 
-### Developer
+variable "enable_bastion" {
+  type = bool
+  default = false
+}
 
+variable "images" {
+  description = "Custom OS Image definitions for Azure Compute Gallery"
+  type = list(object(
+    {
+      name = string
+      publisher = string
+      offer = string
+      sky = optional(string, "default")
+    }
+  ))
+}
+```
 
+|Variable|Type|Description|
+|---|---|---|
+|tags|list||
+|location|string|Default Azure region. All resources will be created in this region|
+|virtualNetwork|object|Virtual network to host session host VMs|
+|subnets|list(object)|VNet subnets.|
+|enable_bastion|bool|for future use|
+|images|list(object)|OS image definitions in the Azure Compute Gallery|
 
-![wvd high-level architecture](/static/wvd-developer-highlevel.png)
+### Post Deployment
 
-The developer use case assumes:
+These resources are broken out in part because there is the potential for the need for additional manual configuration before deploying the remaining AVD components.
 
-- Standard set of developer tools are installed.
-- Users will have full or limited adminitrative rights to the workstation.
-- No productivity tools (ie Office) will be installed.
+#### AD DS Connectivity
 
+The Virtual Network created in this step needs to be configured with a path (VNet Peering, VPN, etc) to access Active Directory Domain Services (AD DS) resources.
 
-### Administrator
+#### Custom OS Image
 
-TBD. Additional research and deliberation required before making a recommendation.
+Publish a custom Windows 10/11 OS image to the Azure Compute Gallery. The following example uses Hashicorp Packer to create the image and transfer it to the Compute Gallery.
+
+[PACKER Example Windows 10 custom image](./windows-data-image/)
+
+## AVD Resources
+
+The AVD Resources template will deploy all AVD resources and session host virtual machines.
+
+### variables
+
+```yaml
+variable "location" {
+  type        = string
+  description = "Azure Region"
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "Azure Resource tags"
+}
+
+variable "avd_config" {
+  description = "AVD configuration options"
+  type = list(object(
+    {
+      name                 = string
+      friendly_name        = string
+      description          = optional(string, "AVD Hostpool")
+      type                 = optional(string, "Pooled")
+      max_sessions         = number
+      load_balancer_type   = optional(string, "DepthFirst")
+      reg_key_lifetime_hrs = optional(number, 1)
+      vm_prefix            = string
+      vnet_name            = string
+      vnet_rg              = string
+      subnet_name          = string
+      host_count           = optional(number, 0)
+      image_name           = string
+    }
+  ))
+}
+
+variable "adds-join-username" {
+    type        = string
+    description = "ADDS Join username"
+}
+
+variable "adds-join-password" {
+    type        = string
+    description = "ADDS Join password"
+    sensitive   = true
+}
+
+variable "sessionhosts" {
+  description = "Session Host virtual machine options"
+  type = object({
+    size              = string
+    local_admin       = optional(string, "shadmin")
+    gallery_name      = string
+    gallery_rg        = string
+    adds_domain_name  = string
+  })
+}
+```
+
+|variable|type|description|
+|---|---|---|
+|location|string|Default Azure region. All resources will be created in this region|
+|tags|list||
+|avd_config|list(object)|List of AVD configuration options. Each object in the list will result in a seperate set of AVD resources (hostpool/workspace/Application Group)|
+|adds-join-username|string|AD DS admin user name (domain join)|
+|adds-join-password|secure string|AD DS admin user password (domain join)
+|session hosts|object|common options for all session hosts|
