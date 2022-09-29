@@ -25,6 +25,7 @@ variable "build_vm" {
         image_offer     = string
         image_publisher = string
         image_sku       = string
+        resource_group  = string
     })
     default = {
         size_sku            = "Standard_D2s_v3"
@@ -34,7 +35,7 @@ variable "build_vm" {
         image_publisher     = "microsoftwindowsdesktop"
         #image_sku           = "win11-21h2-avd"
         image_sku           = "21h1-evd-g2",
-        resource_group      = "rg-win11-imageBuilder"
+        resource_group      = "rg-avd-images-centralus"
     }
 }
 
@@ -53,8 +54,8 @@ variable "compute_gallery" {
         gallery_name    = string
     })
     default = {
-        resource_group = "rg-win11-imageBuilder"
-        gallery_name = "avdimages"
+        resource_group  = "rg-avd-images-centralus"
+        gallery_name    = "cgavdimagegallery"
     }
 }
 
@@ -74,13 +75,13 @@ source "azure-arm" "win11" {
     winrm_use_ssl                       = true
     winrm_username                      = "packer"
 
-    managed_image_name                  = "di-Win10"
-    managed_image_resource_group_name   = "rg-win11-imageBuilder"
+    managed_image_name                  = "win10-developer"
+    managed_image_resource_group_name   = "rg-avd-images-centralus"
 
     shared_image_gallery_destination {
         resource_group        = var.compute_gallery["resource_group"]
         gallery_name          = var.compute_gallery["gallery_name"]
-        image_name            = "win10"
+        image_name            = "win10-developer"
         image_version         = "{{isotime \"06\"}}.{{isotime \"01\"}}.{{isotime \"02030405\"}}"
         replication_regions   = var.replication_regions
     }
