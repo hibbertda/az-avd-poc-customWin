@@ -4,77 +4,95 @@ packer {
       version = "0.16.8"
       source = "github.com/rgl/windows-update"
     }
+    azure = {
+      source  = "github.com/hashicorp/azure"
+      version = "~> 2"
+    }
   }
 }
 
-variable "env" {
-  description = "Common environment information"
+variable "location" {
+    description = "Azure region for the build VM"
+    type        = string
+}
+
+variable "cloud_environment" {
+    description = "Azure cloud environment (Public or USGovernment)"
+    type        = string
+    default     = "Public"
+}
+
+variable "az_compute_gallery" {
+  description = "Azure Compute Gallery options"
   type = object({
-    az_region   = string        # Azure region to deploy image creation resources
-    allowed_ips = list(string)  # Allowed IPs to access to build VM
+    resource_group = string
+    gallery_name   = string
   })
+}
+
+variable "shared_image" {
+    description = "Shared Image Definition to build in Compute Gallery"
+    type = object({
+        name    = string
+        os_type = string
+        identifier = object({
+            publisher = string
+            offer     = string
+            sku       = string
+        })
+    })
 }
 
 variable "build_vm" {
-  description = "Build VM configuration"
-  type = object({
-      size_sku          = string  # VM Sku for build VM
-      os_disk_size      = number  # build VM managed disk size
-      os_type           = string  # OS type (Windows | Linux)
-      image_offer       = string  # Source image_offer (Azure Marketplace)
-      image_publisher   = string  # Source image_publisher (Azure Marketplace)
-      image_sku         = string  # Source image_sku (Azure Marketplace)
-      resource_group    = string  # Resource group to deploy build resources
-      cloud_environment = string  # Azure cloud environment (Public | Gov)
-  })
+    description = "Build VM configuration"
+    type = object({
+        size_sku        = string
+        os_disk_size    = number
+        image_offer     = string
+        image_publisher = string
+        image_sku       = string
+    })
 }
 
-variable "compute_gallery" {
-  description = "Azure Compute Gallery"
-  type = object({
-      image_name          = string        # Destination image in compute gallery
-      resource_group      = string        # Compute gallery resource group
-      gallery_name        = string        # Compute gallery name
-      replication_regions = list(string)  # Azure Regions to replicate image
-  })
+variable "replication_regions" {
+    description = "Select regions for replicating custom image"
+    type        = list(string)
+    default     = ["centralus"]
 }
 
 locals {
-  winrm_timeout   = "5m"
-  winrm_insecure  = true
-  winrm_ssl       = true
+  shared_image_version = formatdate("YY.MM.DDhhmm", timestamp())
 }
 
 source "azure-arm" "win11" {
-  build_resource_group_name           = var.build_vm["resource_group"]
-  use_azure_cli_auth                  = true
-  cloud_environment_name              = var.build_vm.cloud_environment
-  communicator                        = "winrm"
-  
-  image_offer                         = var.build_vm["image_offer"]
-  image_publisher                     = var.build_vm["image_publisher"]
-  image_sku                           = var.build_vm["image_sku"]
-  os_type                             = var.build_vm.os_type
-  vm_size                             = var.build_vm["size_sku"]
+  location               = var.location
+  cloud_environment_name = var.cloud_environment
+  use_azure_cli_auth     = true
+  communicator           = "winrm"
 
-  winrm_insecure                      = local.winrm_insecure
-  winrm_timeout                       = local.winrm_timeout
-  winrm_use_ssl                       = local.winrm_ssl
-  winrm_username                      = "packer"
+  image_offer     = var.build_vm["image_offer"]
+  image_publisher = var.build_vm["image_publisher"]
+  image_sku       = var.build_vm["image_sku"]
+  os_type         = var.shared_image["os_type"]
+  vm_size         = var.build_vm["size_sku"]
+  os_disk_size_gb = var.build_vm["os_disk_size"]
 
-  managed_image_name                  = var.compute_gallery.image_name
-  managed_image_resource_group_name   = var.build_vm["resource_group"]
+  winrm_insecure  = true
+  winrm_timeout   = "5m"
+  winrm_use_ssl   = true
+  winrm_username  = "packer"
 
-  allowed_inbound_ip_addresses        = var.env.allowed_ips
-  async_resourcegroup_delete          = true
-  shared_image_gallery_replica_count  = 3
+  managed_image_name                = "${var.shared_image["name"]}-${replace(local.shared_image_version, ".", "-")}"
+  managed_image_resource_group_name = var.az_compute_gallery["resource_group"]
+
+  async_resourcegroup_delete = true
 
   shared_image_gallery_destination {
-      resource_group        = var.compute_gallery["resource_group"]
-      gallery_name          = var.compute_gallery["gallery_name"]
-      image_name            = var.compute_gallery.image_name
-      image_version         = "{{isotime \"06\"}}.{{isotime \"01\"}}.{{isotime \"02030405\"}}"
-      replication_regions   = var.compute_gallery.replication_regions
+    resource_group      = var.az_compute_gallery["resource_group"]
+    gallery_name        = var.az_compute_gallery["gallery_name"]
+    image_name          = var.shared_image["name"]
+    image_version       = local.shared_image_version
+    replication_regions = var.replication_regions
   }
 }
 
@@ -86,21 +104,21 @@ build {
 
   # Application installation
   provisioner "powershell" {
-      script = "./scripts/install.ps1"
+    script = "./scripts/install.ps1"
   }
 
-  # Remove Chocolately 
+  # Remove Chocolatey
   provisioner "powershell" {
-      script = "./scripts/remove-choco.ps1"
+    script = "./scripts/remove-choco.ps1"
   }
 
   provisioner "file" {
-    source = "./app_images/"
+    source      = "./app_images/"
     destination = "c:\\"
   }
 
   # Sysprep
   provisioner "powershell" {
-      script = "./scripts/sysprep.ps1"
-  }   
+    script = "./scripts/sysprep.ps1"
+  }
 }

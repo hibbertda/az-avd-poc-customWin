@@ -46,8 +46,8 @@ module "network" {
   source         = "./modules/network"
   resourcegroup  = azurerm_resource_group.avd-core
   random         = random_string.random_uid.result
-  virtualnetwork = var.virtualNetwork
-  subnets        = var.subnets
+  virtualnetwork = { address_space = var.vnet_address_space }
+  subnets        = [{ name = var.subnet_name, address_prefix = var.subnet_prefix }]
 }
 
 # Storage account temporarily disabled
@@ -168,10 +168,15 @@ module "session_host_vm" {
   resourcegroup       = azurerm_resource_group.avd-vm[each.key]
   core_resourcegroup  = azurerm_resource_group.avd-core
   core_virtualnetwork = module.network
-  sessionhosts        = var.sessionhosts
-  host_pool_key       = module.avd_workspace[each.key].host_pool_key
-  host_pool           = module.avd_workspace[each.key].host_pool
-  avd_config          = each.value
+  sessionhosts = {
+    size         = var.session_host_size
+    local_admin  = var.local_admin
+    gallery_name = var.gallery_name
+    gallery_rg   = var.gallery_rg
+  }
+  host_pool_key = module.avd_workspace[each.key].host_pool_key
+  host_pool     = module.avd_workspace[each.key].host_pool
+  avd_config    = each.value
   # Remove AD DS related variables since we're using pure Entra ID
   # adds-join-username  = var.adds-join-username
   # adds-join-password  = var.adds-join-password

@@ -21,7 +21,7 @@ terraform {
 }
 
 provider "azurerm" {
-  subscription_id = "43c29ed9-84ff-4951-aada-57b4a0438ac6"
+  subscription_id = var.az_subscription_id
   
   # Use Azure AD authentication (default behavior)
   # This will use Azure CLI, Managed Identity, or Azure AD Service Principal
