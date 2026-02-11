@@ -12,12 +12,19 @@ resource "random_password" "password" {
   override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
+resource "random_string" "random_uid" {
+  length = 8
+  special = false
+  lower = true
+  upper = false
+}
+
 data "azuread_domains" "aad-tenant" {
   only_initial = true
 }
 
 locals {
-  aad-domain-user = "avd-domain-join@${data.azuread_domains.aad-tenant.domains.0.domain_name}"
+  aad-domain-user = "avd-domain-join2@${data.azuread_domains.aad-tenant.domains.0.domain_name}"
 }
 
 resource "azuread_user" "avd-domain-user" {
@@ -27,16 +34,19 @@ resource "azuread_user" "avd-domain-user" {
 }
 
 resource "azurerm_resource_group" "avd-core" {
-	name        = "rg-avd-core-${var.location}"
+	name        = "rg-avd-core-${var.location}-${random_string.random_uid.result}"
 	location    = var.location
-  tags        = var.tags
+  #tags        = var.tags
+  tags = merge(var.tags, {
+    "random" = random_string.random_uid.result
+  })
 }
 
-resource "azurerm_resource_group" "avd-images" {
-	name        = "rg-avd-images-${var.location}"
-	location    = var.location
-  tags        = var.tags
-}
+# resource "azurerm_resource_group" "avd-images" {
+# 	name        = "rg-avd-images-${var.location}"
+# 	location    = var.location
+#   tags        = var.tags
+# }
 
 
 module "avd_keyvault" {
@@ -54,11 +64,10 @@ module "network" {
 	random 						= random_string.sarandom.result
   virtualnetwork  	= var.virtualNetwork
   subnets         	= var.subnets
-	#remote_vnet_peer 	= var.remote_vnet_peer
 }
 
 resource "azurerm_storage_account" "profile-storage" {
-  name                			= "saprofile${random_string.sarandom.result}"
+  name                			= "saprofile0${random_string.sarandom.result}"
   resource_group_name 			= azurerm_resource_group.avd-core.name
   location                  = azurerm_resource_group.avd-core.location
   account_tier             	= "Standard"
@@ -75,28 +84,28 @@ resource "azurerm_storage_share" "profile-share" {
   quota                = 500
 }
 
-resource "azurerm_shared_image_gallery" "avd-compute-gallery" {
-  name                = "cgavdimagegallery"
-  resource_group_name = azurerm_resource_group.avd-images.name
-  location            = azurerm_resource_group.avd-images.location
-  description         = "AVD Custom Windows Images"
-}
+# resource "azurerm_shared_image_gallery" "avd-compute-gallery" {
+#   name                = "cgavdimagegallery"
+#   resource_group_name = azurerm_resource_group.avd-images.name
+#   location            = azurerm_resource_group.avd-images.location
+#   description         = "AVD Custom Windows Images"
+# }
 
-resource "azurerm_shared_image" "windows-image" {
-	for_each = {
-		for index, image in var.images:
-		image.name => image
-	}
-  name                = each.value.name
-  gallery_name        = azurerm_shared_image_gallery.avd-compute-gallery.name
-  resource_group_name = azurerm_resource_group.avd-images.name
-  location            = azurerm_resource_group.avd-images.location
-  os_type             = "Windows"
-  hyper_v_generation  = "V2"
+# resource "azurerm_shared_image" "windows-image" {
+# 	for_each = {
+# 		for index, image in var.images:
+# 		image.name => image
+# 	}
+#   name                = each.value.name
+#   gallery_name        = azurerm_shared_image_gallery.avd-compute-gallery.name
+#   resource_group_name = azurerm_resource_group.avd-images.name
+#   location            = azurerm_resource_group.avd-images.location
+#   os_type             = "Windows"
+#   hyper_v_generation  = "V2"
 
-  identifier {
-    publisher = each.value.publisher
-    offer     = each.value.offer
-    sku       = each.value.sku
-  }
-}
+#   identifier {
+#     publisher = each.value.publisher
+#     offer     = each.value.offer
+#     sku       = each.value.sku
+#   }
+# }

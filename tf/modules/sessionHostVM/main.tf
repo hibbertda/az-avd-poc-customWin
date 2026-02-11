@@ -41,6 +41,7 @@ resource "azurerm_network_interface" "avdsh-nic" {
 resource "azurerm_windows_virtual_machine" "avdsh-vm" {
 	count               = var.avd_config["host_count"]
   name                = "${local.vm_name}-${count.index}"
+  computer_name       = "${var.avd_config["vm_prefix"]}-${count.index}"
   resource_group_name = var.resourcegroup.name
   location 						= var.resourcegroup.location
   size                = var.sessionhosts["size"]

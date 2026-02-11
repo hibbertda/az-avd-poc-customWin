@@ -8,6 +8,23 @@ variable "tags" {
   description = "Azure Resource tags"
 }
 
+variable "virtualNetwork" {
+  description = "Virtual network configuration"
+  default = {
+    address_space = ["10.12.0.0/16"]
+  }
+}
+
+variable "subnets" {
+  description = "Subnets"
+  type = list(object(
+    {
+      name           = optional(string, "vm")
+      address_prefix = list(string)
+    }
+  ))
+}
+
 variable "avd_config" {
   description = "AVD configuration options"
   type = list(object(
@@ -25,28 +42,31 @@ variable "avd_config" {
       subnet_name          = string
       host_count           = optional(number, 0)
       image_name           = string
+      app_group_type       = optional(string, "Desktop") # "Desktop" or "RemoteApp"
     }
   ))
 }
 
-variable "adds-join-username" {
-    type        = string
-    description = "ADDS Join username"
-}
+# Remove AD DS related variables since we're using pure Entra ID
+# variable "adds-join-username" {
+#   description = "ADDS Join username"  
+#   type        = string
+# }
 
-variable "adds-join-password" {
-    type        = string
-    description = "ADDS Join password"
-    sensitive   = true
-}
+# variable "adds-join-password" {
+#   description = "ADDS Join password"
+#   type        = string
+#   sensitive   = true
+# }
 
 variable "sessionhosts" {
   description = "Session Host virtual machine options"
   type = object({
-    size              = string
-    local_admin       = optional(string, "shadmin")
-    gallery_name      = string
-    gallery_rg        = string
-    adds_domain_name  = string
+    size         = string
+    local_admin  = optional(string, "shadmin")
+    gallery_name = string
+    gallery_rg   = string
+    # Remove adds_domain_name since we're not using AD DS
+    # adds_domain_name  = optional(string)
   })
 }

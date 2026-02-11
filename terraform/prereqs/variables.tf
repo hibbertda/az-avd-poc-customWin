@@ -1,6 +1,6 @@
 variable "tags" {
   description = "List of resource tags"
-  type = object
+  type = map
   default = {
     "owner"       = "Daniel Hibbert"
     "projectName" = "AVD"
@@ -22,8 +22,8 @@ variable "subnets" {
   description = "Subnets"
   type = list(object(
     {
-      name = optional(string, vm)
-      address_prefix = list
+      name            = optional(string, "vm")
+      address_prefix  = list(string)
     }
   ))
 }
@@ -40,7 +40,7 @@ variable "images" {
       name = string
       publisher = string
       offer = string
-      sky = optional(string, "default")
+      sku = optional(string, "default")
     }
   ))
 }

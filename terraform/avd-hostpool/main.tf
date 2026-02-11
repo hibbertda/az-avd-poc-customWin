@@ -5,6 +5,43 @@ resource "random_string" "sarandom" {
   upper = false
 }
 
+# Prereqs
+
+module "avd_keyvault" {
+	source              = "./modules/keyvault"
+	resourcegroup       = azurerm_resource_group.avd-core
+	random              = random_string.sarandom.result
+
+	adds-join-username  = local.aad-domain-user
+	adds-join-password  = random_password.password.result
+}
+
+module "network" {
+  source 						= "./modules/network"
+	resourcegroup 		= azurerm_resource_group.avd-core
+	random 						= random_string.sarandom.result
+  virtualnetwork  	= var.virtualNetwork
+  subnets         	= var.subnets
+}
+
+resource "azurerm_storage_account" "profile-storage" {
+  name                			= "saprofile0${random_string.sarandom.result}"
+  resource_group_name 			= azurerm_resource_group.avd-core.name
+  location                  = azurerm_resource_group.avd-core.location
+  account_tier             	= "Standard"
+  account_replication_type 	= "LRS"
+
+	azure_files_authentication {
+		directory_type = "AADDS"
+	}
+}
+
+resource "azurerm_storage_share" "profile-share" {
+  name                 = "user-profiles"
+  storage_account_name = azurerm_storage_account.profile-storage.name
+  quota                = 500
+}
+
 /*
 AVD Resources
 */
@@ -21,7 +58,7 @@ resource "azurerm_resource_group" "avd" {
 
 module "avd_workspace" {
 	count 				= length(var.avd_config)	
-	source 				= "../modules/avd"
+	source 				= "./modules/avd"
 	resourcegroup = azurerm_resource_group.avd[(var.avd_config[count.index]["name"])] #eww
 	random 				= random_string.sarandom.result
 	avd_config 		= var.avd_config[count.index]
@@ -43,11 +80,15 @@ resource "azurerm_resource_group" "avd-vm" {
   tags        = var.tags
 }
 
+# resource "azurerm_role_assignment" "avd-rg" {
+
+# }
+
 
 
 module "session_host_vm" {
 	count 						  = length(var.avd_config)				
-	source						  = "../modules/sessionHostVM"
+	source						  = "./modules/sessionHostVM"
 	resourcegroup 		  = azurerm_resource_group.avd-vm[(var.avd_config[count.index]["name"])]
 	sessionhosts 			  = var.sessionhosts
 	host_pool_key 		  = module.avd_workspace[count.index].host_pool_key

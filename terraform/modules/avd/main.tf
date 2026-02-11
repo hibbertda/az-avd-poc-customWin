@@ -9,8 +9,7 @@ resource "azurerm_virtual_desktop_host_pool" "hostpool"{
 	type 											= var.avd_config["type"]
 	maximum_sessions_allowed 	= var.avd_config["max_sessions"]
 	load_balancer_type 				= var.avd_config["load_balancer_type"]
-
-  custom_rdp_properties     = "use multimon:i:1;screen mode id:i:1;smart sizing:i:1;dynamic resolution:i:1;"
+  custom_rdp_properties 			= "use multimon:i:1;screen mode id:i:1;smart sizing:i:1;dynamic resolution:i:1;audiomode:i:1;redirectclipboard:i:1;redirectsmartcards:i:1;redirectwebauthn:i:1"
 
 	start_vm_on_connect 			= true
   tags                      =  var.tags

@@ -27,17 +27,18 @@ resource "azurerm_key_vault" "wvd-keyvault" {
 
 }
 
-resource "azurerm_key_vault_secret" "domainjoin-username" {
-    name = "domainjoin-username"
-    value = var.adds-join-username
+# Remove AD DS secrets since we're using pure Entra ID
+# resource "azurerm_key_vault_secret" "domainjoin-username" {
+#     name = "domainjoin-username"
+#     value = var.adds-join-username
 
-    key_vault_id = azurerm_key_vault.wvd-keyvault.id
-}
+#     key_vault_id = azurerm_key_vault.wvd-keyvault.id
+# }
 
 
-resource "azurerm_key_vault_secret" "domainjoin-password" {
-    name = "domainjoin-password"
-    value = var.adds-join-password
+# resource "azurerm_key_vault_secret" "domainjoin-password" {
+#     name = "domainjoin-password"
+#     value = var.adds-join-password
 
-    key_vault_id = azurerm_key_vault.wvd-keyvault.id
-}
+#     key_vault_id = azurerm_key_vault.wvd-keyvault.id
+# }
