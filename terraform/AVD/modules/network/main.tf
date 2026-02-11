@@ -19,7 +19,8 @@ resource "azurerm_subnet" "subnets" {
   address_prefixes      = each.value.address_prefix 
 
   private_link_service_network_policies_enabled = true
-  private_endpoint_network_policies_enabled = true
+  #private_endpoint_network_policies = Enabled
+  #private_endpoint_network_policies_enabled = true
 }
 # resource "azurerm_public_ip" "baspip" {
 #   name                = "pip-bad-${var.random}"

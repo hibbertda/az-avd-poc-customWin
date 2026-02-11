@@ -22,15 +22,15 @@ choco install azcopy --confirm
 
 choco install rsat --confirm
 
-choco install powerbi --confirm
+# choco install powerbi --confirm
 
 choco install python --confirm
 
 choco install vscode-python --confirm
 
 # SQL Server Management Studio (SSMS)
-choco install sql-server-management-studio --confirm
+#choco install sql-server-management-studio --confirm
 
 # Azure Data Studio
-choco install azure-data-studio --confirm
-choco install azuredatastudio-powershell
+# choco install azure-data-studio --confirm
+# choco install azuredatastudio-powershell

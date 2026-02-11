@@ -2,8 +2,8 @@
 .terraform
 *.tfstate*
 
-# Packer
-#*.pkrvars.hcl
+# Packer variable files (superseded by .env workflow)
+*.pkrvars.hcl
 
 #Temp
 
@@ -11,5 +11,15 @@
 secret*
 pipeline
 *.tfvars
+!avd.auto.tfvars
 .DS*
 *.lock.hcl
+
+# Master environment config (contains subscription ID)
+.env
+
+# Editor
+.vscode/
+
+# Backup files
+*.bak
